@@ -7,13 +7,13 @@ import { Loading } from '../components/Loading'
 const isLoading = false
 const session = {
     user: {
-        role:"employe"
+        role:"employee"
     }
 }
 export function Routes() {
     function Route() {
         switch (session.user.role) {
-            case "employe":
+            case "employee":
                 return <EmployeeRoutes/>
             case "manager":
                 return <ManagerRoutes/>
