@@ -7,7 +7,7 @@ import { Loading } from '../components/Loading'
 const isLoading = false
 const session = {
     user: {
-        role:"employee"
+        role:""
     }
 }
 export function Routes() {
