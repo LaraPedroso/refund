@@ -4,6 +4,7 @@ import { Input } from "../components/Input";
 import { z, ZodError } from "zod";
 import { api } from "../services/api";
 import { AxiosError } from "axios";
+import { useAuth } from "../hooks/useAuth";
 
 const signInSchema = z.object({
     email: z.string().email({ message: "E-mail inválido" }),
@@ -16,6 +17,8 @@ export function SignIn() {
     // state é o estado atual da ação
     const [state, formAction, isLoading] = useActionState(signIn, null);
 
+    const { save } = useAuth();
+
     // formData é um objeto que contém os dados do formulário
     async function signIn(_: any, formData: FormData) {
         // formData.get - recupera o conteúdo pelo nome sem utilizar estados ( useState )
@@ -26,7 +29,7 @@ export function SignIn() {
             });
 
             const response = await api.post("/sessions", data);
-            console.log(response.data);
+            save(response.data);
         } catch (error) {
             console.log(error);
 
