@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import searchSvg from "../assets/search.svg";
@@ -7,27 +7,55 @@ import { CATEGORIES } from "../utils/categories";
 import { formatCurrency } from "../utils/formatCurrency";
 import { Pagination } from "../components/Pagination";
 import { useAuth } from "../hooks/useAuth";
+import { api } from "../services/api";
+import { ZodError } from "zod";
+import { AxiosError } from "axios";
 
-const refundItems = {
-    id: "1",
-    username: "Reembolso Restaurante",
-    category: "Almoço em viagem",
-    value: formatCurrency(34.5),
-    categoryImg: CATEGORIES["transport"].icon,
-};
+const PER_PAGE = 5;
 
 export function Dashboard() {
     const [name, setName] = useState("");
     const [page, setPage] = useState(1);
-    const [totalOfPage, setTotalOfPage] = useState(10);
-    const [refunds, setRefunds] = useState<RefundItemProps[]>([refundItems]);
+    const [totalOfPage, setTotalOfPage] = useState(0);
+    const [refunds, setRefunds] = useState<RefundItemProps[]>([]);
 
     const context = useAuth();
     context.session?.user.role;
 
-    function fetchRefunds(e: React.FormEvent) {
+    async function fetchRefunds() {
+        try {
+            const response = await api.get<RefundsPaginationAPIResponse>(
+                `/refunds?name=${name.trim()}&page=${page}&perPage=${PER_PAGE}`
+            );
+
+            setRefunds(
+                response.data.refunds.map((refund) => ({
+                    id: refund.id,
+                    name: refund.name,
+                    category: refund.name,
+                    amount: formatCurrency(refund.amount),
+                    categoryImg: CATEGORIES[refund.category].icon,
+                }))
+            );
+            setTotalOfPage(response.data.pagination.totalPages);
+        } catch (error) {
+            console.log(error);
+
+            if (error instanceof ZodError) {
+                return { message: error.issues[0].message };
+            }
+
+            if (error instanceof AxiosError) {
+                return { message: error.response?.data.message };
+            }
+
+            return { message: "Não foi possível carregar" };
+        }
+    }
+
+    function onSubmit(e: React.FormEvent) {
         e.preventDefault();
-        console.log(name);
+        fetchRefunds();
     }
 
     function handlePagination(action: "next" | "previous") {
@@ -43,6 +71,11 @@ export function Dashboard() {
             return prevPage;
         });
     }
+
+    useEffect(() => {
+        fetchRefunds();
+    }, [page]);
+
     return (
         <div className="bg-gray-500 rounded-xl p-10 md:min-w-[768px]">
             <h1 className="text-gray-100 font-bold text-xl flex-1">
@@ -52,7 +85,7 @@ export function Dashboard() {
             <form
                 className="flex flex-1 items-center justify-between pb-6 border-b-[1px] 
             border-b-gray-400 md:flex-row gap-2 mt-6"
-                onSubmit={fetchRefunds}
+                onSubmit={onSubmit}
             >
                 <Input
                     placeholder="Pesquisa pelo nome"
